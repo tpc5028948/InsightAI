@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InsightAI - 智能用户洞察平台</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #1a1a2e;
+    --card: #16213e;
+    --card-hover: #1a2a4a;
+    --primary: #0f3460;
+    --accent: #00d2ff;
+    --warn: #ff6b35;
+    --success: #2ecc71;
+    --text: #e0e6ed;
+    --text-dim: #8b9bb4;
+    --border: #2a3a5c;
+    --radius: 12px;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  /* 顶部导航 */
+  .navbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 28px;
+    background: rgba(22,33,62,0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .brand { display: flex; align-items: baseline; gap: 12px; }
+  .brand h1 {
+    font-size: 22px; font-weight: 700;
+    background: linear-gradient(90deg, var(--accent), #4facfe);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+  }
+  .brand span { font-size: 13px; color: var(--text-dim); }
+  .btn {
+    padding: 8px 18px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--card); color: var(--text); cursor: pointer; font-size: 13px;
+    transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn:hover { background: var(--card-hover); border-color: var(--accent); }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary), #1a4a7a);
+    border-color: var(--accent); color: #fff; font-weight: 600;
+  }
+  .btn-primary:hover { filter: brightness(1.15); }
+  .btn-warn { background: rgba(255,107,53,0.15); border-color: var(--warn); color: var(--warn); }
+  .btn-warn:hover { background: rgba(255,107,53,0.25); }
+
+  /* 主体布局 */
+  .main { display: flex; gap: 20px; padding: 20px 28px 28px; max-width: 1600px; margin: 0 auto; }
+  .panel-left { width: 40%; min-width: 320px; }
+  .panel-right { width: 60%; min-width: 400px; }
+
+  /* 卡片 */
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px; margin-bottom: 16px;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .card:hover { box-shadow: 0 8px 32px rgba(0,210,255,0.06); }
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+  }
+  .card-title { font-size: 15px; font-weight: 600; color: var(--accent); display: flex; align-items: center; gap: 8px; }
+  .card-title .icon { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; }
+  .toggle-btn {
+    width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border);
+    background: transparent; color: var(--text-dim); cursor: pointer; font-size: 16px;
+    display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+  }
+  .toggle-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* Tab */
+  .tabs { display: flex; gap: 4px; margin-bottom: 12px; background: rgba(0,0,0,0.2); padding: 4px; border-radius: 8px; }
+  .tab { flex: 1; padding: 8px; text-align: center; border-radius: 6px; cursor: pointer; font-size: 13px; color: var(--text-dim); transition: all 0.2s; border: none; background: transparent; }
+  .tab.active { background: var(--primary); color: #fff; font-weight: 600; }
+  .tab:hover:not(.active) { color: var(--text); }
+
+  /* 输入 */
+  textarea, input[type="file"] {
+    width: 100%; background: rgba(0,0,0,0.25); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px; color: var(--text); font-size: 13px; resize: vertical;
+    font-family: inherit; outline: none; transition: border-color 0.2s;
+  }
+  textarea:focus { border-color: var(--accent); }
+  textarea::placeholder { color: #5a6a8a; }
+  .input-area { min-height: 160px; }
+  .batch-area { min-height: 220px; }
+  .file-drop {
+    border: 2px dashed var(--border); border-radius: 8px; padding: 32px; text-align: center;
+    color: var(--text-dim); font-size: 13px; cursor: pointer; transition: all 0.2s;
+  }
+  .file-drop:hover { border-color: var(--accent); color: var(--accent); }
+  .file-drop input { display: none; }
+
+  /* 标签 */
+  .tag-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .tag {
+    padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border);
+    background: rgba(0,0,0,0.2); color: var(--text-dim); font-size: 12px; cursor: pointer;
+    transition: all 0.2s; user-select: none;
+  }
+  .tag:hover { border-color: var(--accent); color: var(--text); }
+  .tag.selected {
+    background: linear-gradient(135deg, var(--primary), #1a4a7a);
+    border-color: var(--accent); color: #fff; font-weight: 600;
+  }
+  .tag.single-select.selected { background: linear-gradient(135deg, #1a4a3a, #2ecc71); border-color: var(--success); }
+
+  /* 分析按钮 */
+  .analyze-wrap { margin-top: 16px; }
+  .analyze-btn { width: 100%; padding: 14px; font-size: 15px; justify-content: center; }
+  .loading-text { display: none; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; font-size: 13px; color: var(--accent); }
+  .spinner {
+    width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* 右侧空状态 */
+  .empty-state {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 500px; color: var(--text-dim); text-align: center; gap: 16px;
+  }
+  .empty-state .brain {
+    width: 120px; height: 120px; border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, rgba(0,210,255,0.15), transparent 60%);
+    display: flex; align-items: center; justify-content: center; font-size: 48px;
+    animation: pulse 3s ease-in-out infinite; border: 1px solid var(--border);
+  }
+  @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(0,210,255,0.1);} 50%{box-shadow:0 0 30px 10px rgba(0,210,255,0.08);} }
+
+  /* 结果模块 */
+  .result-module { opacity: 0; transform: translateY(20px); transition: all 0.6s ease; }
+  .result-module.visible { opacity: 1; transform: translateY(0); }
+  .module-body { overflow: hidden; transition: max-height 0.4s ease; }
+  .module-body.collapsed { max-height: 0; }
+
+  /* 图表容器 */
+  .chart-row { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
+  .chart-box { flex: 1; min-width: 200px; }
+  .chart-box canvas { max-width: 100%; }
+  .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
+  .stat-item {
+    background: rgba(0,0,0,0.2); border-radius: 8px; padding: 12px; text-align: center;
+    border: 1px solid var(--border);
+  }
+  .stat-value { font-size: 22px; font-weight: 700; color: var(--accent); }
+  .stat-label { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+
+  /* 气泡图 */
+  .bubble-wrap { position: relative; width: 100%; height: 280px; }
+  .bubble-wrap canvas { width: 100%; height: 100%; }
+
+  /* 矩阵图 */
+  .matrix-wrap { position: relative; width: 100%; height: 320px; }
+  .matrix-wrap canvas { width: 100%; height: 100%; }
+  .quadrant-legend {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px;
+  }
+  .quadrant-item {
+    background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px; border: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .quadrant-item .q-title { font-weight: 600; margin-bottom: 4px; }
+  .q-urgent { border-left: 3px solid var(--warn); }
+  .q-opt { border-left: 3px solid var(--accent); }
+  .q-long { border-left: 3px solid #f1c40f; }
+  .q-low { border-left: 3px solid var(--text-dim); }
+
+  /* 建议列表 */
+  .suggestion-list { display: flex; flex-direction: column; gap: 12px; }
+  .suggestion-item {
+    background: rgba(0,0,0,0.2); border-radius: 10px; padding: 14px; border: 1px solid var(--border);
+    transition: all 0.2s;
+  }
+  .suggestion-item:hover { border-color: var(--accent); }
+  .sug-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .sug-title { font-weight: 600; font-size: 14px; }
+  .sug-badges { display: flex; gap: 6px; }
+  .badge {
+    padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;
+  }
+  .badge-high { background: rgba(255,107,53,0.15); color: var(--warn); }
+  .badge-mid { background: rgba(241,196,15,0.15); color: #f1c40f; }
+  .badge-low { background: rgba(46,204,113,0.15); color: var(--success); }
+  .sug-pain { font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
+  .sug-action { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .typewriter { border-right: 2px solid var(--accent); animation: blink 0.8s step-end infinite; }
+  @keyframes blink { 50% { border-color: transparent; } }
+
+  /* 底部工具栏 */
+  .bottom-bar {
+    display: flex; gap: 12px; justify-content: center; padding: 16px; border-top: 1px solid var(--border);
+    background: var(--card); margin: 0 28px 20px; border-radius: var(--radius);
+  }
+  .footer-note {
+    text-align: center; font-size: 11px; color: var(--text-dim); padding: 0 28px 20px;
+  }
+
+  /* 响应式 */
+  @media (max-width: 900px) {
+    .main { flex-direction: column; }
+    .panel-left, .panel-right { width: 100%; }
+  }
+  @media (max-width: 600px) {
+    .navbar { flex-direction: column; gap: 10px; align-items: flex-start; }
+    .main { padding: 14px; }
+    .stat-grid { grid-template-columns: 1fr; }
+    .chart-row { flex-direction: column; }
+  }
+
+  /* 滚动条 */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+  /* 隐藏 */
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- 导航栏 -->
+<nav class="navbar">
+  <div class="brand">
+    <h1>InsightAI</h1>
+    <span>让每条用户反馈都变成产品决策</span>
+  </div>
+  <button class="btn btn-warn" onclick="loadDemo()">
+    <span>⚡</span> 加载Demo数据
+  </button>
+</nav>
+
+<!-- 主体 -->
+<div class="main">
+  <!-- 左侧输入区 -->
+  <div class="panel-left">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span class="icon">📥</span> 数据源</div>
+      </div>
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab(0)">手动输入</button>
+        <button class="tab" onclick="switchTab(1)">批量粘贴</button>
+        <button class="tab" onclick="switchTab(2)">上传CSV</button>
+      </div>
+      <div id="tab-0">
+        <textarea class="input-area" id="manualInput" placeholder="如：搜索结果总是不准确，找了半天才找到想要的功能"></textarea>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">一行一条反馈，支持实时分析</div>
+      </div>
+      <div id="tab-1" class="hidden">
+        <textarea class="batch-area" id="batchInput" placeholder="批量粘贴用户反馈，每行一条，最多支持50条..."></textarea>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">已输入 <span id="batchCount">0</span> 条</div>
+      </div>
+      <div id="tab-2" class="hidden">
+        <label class="file-drop" id="fileDrop">
+          <input type="file" id="csvInput" accept=".csv,.txt" onchange="handleFile(this)">
+          <div style="font-size:28px;margin-bottom:8px;">📁</div>
+          <div>点击或拖拽上传 CSV / TXT 文件</div>
+          <div style="font-size:11px;margin-top:6px;color:var(--text-dim);">文件需包含一列用户反馈文本</div>
+        </label>
+        <div id="fileName" style="font-size:12px;color:var(--accent);margin-top:8px;"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span class="icon">🎮</span> 产品类型</div>
+      </div>
+      <div class="tag-group" id="productType">
+        <span class="tag single-select" data-val="社交" onclick="selectSingle(this)">社交</span>
+        <span class="tag single-select" data-val="电商" onclick="selectSingle(this)">电商</span>
+        <span class="tag single-select selected" data-val="工具" onclick="selectSingle(this)">工具</span>
+        <span class="tag single-select" data-val="内容" onclick="selectSingle(this)">内容</span>
+        <span class="tag single-select" data-val="游戏" onclick="selectSingle(this)">游戏</span>
+        <span class="tag single-select" data-val="金融" onclick="selectSingle(this)">金融</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span class="icon">📊</span> 分析维度</div>
+      </div>
+      <div class="tag-group" id="dimensions">
+        <span class="tag selected" data-val="功能需求" onclick="toggleTag(this)">功能需求</span>
+        <span class="tag selected" data-val="体验问题" onclick="toggleTag(this)">体验问题</span>
+        <span class="tag selected" data-val="性能抱怨" onclick="toggleTag(this)">性能抱怨</span>
+        <span class="tag selected" data-val="价格敏感" onclick="toggleTag(this)">价格敏感</span>
+        <span class="tag" data-val="竞品对比" onclick="toggleTag(this)">竞品对比</span>
+        <span class="tag" data-val="内容质量" onclick="toggleTag(this)">内容质量</span>
+      </div>
+    </div>
+
+    <div class="analyze-wrap">
+      <button class="btn btn-primary analyze-btn" id="analyzeBtn" onclick="startAnalyze()">
+        <span>🚀</span> 开始洞察
+      </button>
+      <div class="loading-text" id="loadingText">
+        <div class="spinner"></div>
+        <span id="loadingMsg">AI正在分析反馈...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 右侧结果区 -->
+  <div class="panel-right" id="rightPanel">
+    <div class="empty-state" id="emptyState">
+      <div class="brain">🧠</div>
+      <div style="font-size:16px;font-weight:600;">粘贴用户反馈，启动AI洞察</div>
+      <div style="font-size:13px;">输入数据后点击「开始洞察」，AI将自动完成情感分析、痛点聚类、优先级排序与产品建议生成</div>
+    </div>
+
+    <div id="results" class="hidden">
+      <!-- 模块A：情感分布 -->
+      <div class="card result-module" id="modA">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">😊</span> 情感分布仪表盘</div>
+          <button class="toggle-btn" onclick="toggleModule('modA')">−</button>
+        </div>
+        <div class="module-body" id="modA-body">
+          <div class="chart-row">
+            <div class="chart-box" style="flex:0 0 220px;">
+              <canvas id="pieCanvas" width="220" height="220"></canvas>
+            </div>
+            <div class="chart-box" style="flex:1;min-width:200px;">
+              <canvas id="trendCanvas" width="400" height="220"></canvas>
+            </div>
+          </div>
+          <div class="stat-grid">
+            <div class="stat-item">
+              <div class="stat-value" id="statTotal">0</div>
+              <div class="stat-label">总反馈数</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value" id="statNeg">0%</div>
+              <div class="stat-label">负面占比</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value" id="statUrgent">0</div>
+              <div class="stat-label">紧急问题数</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 模块B：痛点聚类 -->
+      <div class="card result-module" id="modB">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">🫧</span> 痛点聚类图</div>
+          <button class="toggle-btn" onclick="toggleModule('modB')">−</button>
+        </div>
+        <div class="module-body" id="modB-body">
+          <div class="bubble-wrap">
+            <canvas id="bubbleCanvas" width="600" height="280"></canvas>
+          </div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:8px;text-align:center;">气泡大小 = 提及频次 · 颜色深浅 = 情感强烈度 · Hover查看典型反馈</div>
+        </div>
+      </div>
+
+      <!-- 模块C：优先级矩阵 -->
+      <div class="card result-module" id="modC">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">📍</span> 优先级矩阵</div>
+          <button class="toggle-btn" onclick="toggleModule('modC')">−</button>
+        </div>
+        <div class="module-body" id="modC-body">
+          <div class="matrix-wrap">
+            <canvas id="matrixCanvas" width="600" height="320"></canvas>
+          </div>
+          <div class="quadrant-legend" id="quadrantLegend"></div>
+        </div>
+      </div>
+
+      <!-- 模块D：AI产品建议 -->
+      <div class="card result-module" id="modD">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">💡</span> AI产品建议</div>
+          <button class="toggle-btn" onclick="toggleModule('modD')">−</button>
+        </div>
+        <div class="module-body" id="modD-body">
+          <div class="suggestion-list" id="suggestionList"></div>
+          <div style="margin-top:16px;text-align:center;">
+            <button class="btn btn-primary" onclick="generatePRD()">
+              <span>📄</span> 一键生成产品需求文档大纲
+            </button>
+          </div>
+          <div id="prdOutput" style="margin-top:12px;font-size:12px;color:var(--text-dim);white-space:pre-wrap;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 底部 -->
+<div class="bottom-bar">
+  <button class="btn" onclick="exportReport()">
+    <span>📥</span> 导出洞察报告
+  </button>
+  <button class="btn" onclick="shareLink()">
+    <span>🔗</span> 分享链接
+  </button>
+</div>
+<div class="footer-note">
+  Powered by InsightAI | Demo版本 - 实际生产环境可接入LLM API
+</div>
+
+<script>
+/* ================= 全局状态 ================= */
+let currentTab = 0;
+let analysisResult = null;
+const demoData = {
+  '游戏': [
+    "闪退，都别玩，闪退，坑人，根本进不去",
+    "好玩，但是太氪金了，连食物成熟了都不会采摘，非得氪金才行",
+    "玩法太多，久了手机容易卡顿，发热严重",
+    "建筑全部收起后，全部放置直接路全堵了，可以优化下吗",
+    "操作比同类游戏更加麻烦，一点不丝滑，建议开发团队去看看竞品的操作逻辑",
+    "这个游戏是不更新了吗？还是不想开了呀，多久没新内容了",
+    "我跟别人正聊天呢，我突然发现我被禁言了，莫名其妙被禁言",
+    "不氪金就穷追猛打，逼你氪金，年底了没业绩了冲个业绩嘛",
+    "一直闪退怎么解决，30秒退一次，根本没法玩",
+    "更新后发消息会闪退，一发消息就会闪退，小程序就没这个问题",
+    "卡，进不去，经常卡这进不去，优化一下服务器吧",
+    "钱多少根据你VIP等级走，打到一定钱打啥都不掉，就为了让你充钱",
+    "真垃圾游戏，不氪金一点玩不了，平民玩家没有体验",
+    "画面简单，广告太多，操作也不灵便，体验极差",
+    "前期体验还不错，之后氪度有些高了，没氪够就会玩得很难受，怪物数值翻翻根本打不了"
+  ],
+  '电商': [
+    "商家发货超出时效且迟迟不更新物流信息，目前并未收到货，要求退款但是商家拒绝退货退款",
+    "客服服务态度极差，且回复不及时，已经向12315投诉",
+    "我的快递还没有发货，客服反馈称近期订单骤增，仓库日夜颠倒正在全力加班发货中",
+    "从12月初开始，快递就很难发出去了，仓库里的员工们相继感染，没人打包",
+    "货好不容易发出去了，又卡在路上，好几天都动不了，不少买家要求退款",
+    "整整一个月了，我还没收到。已经申请退款，收到退款后卸载，再也不来了",
+    "太差了，全是假货，而且不让退货退款，路转黑，再也不会买",
+    "假冒优惠信息，实际根本买不到折扣价！成功下了订单，还被商家取消！体验感极差",
+    "我买的东西不到15英镑，结果退货要掏3、40英镑的物流费，太可笑了",
+    "发货慢要罚款，店铺客服回消息不及时也要罚款，月售万单最后一算账还亏钱",
+    "直播带货售后环节失灵，物流、退换等售后服务无法处理，遭遇商家、直播平台、主播之间反复踢皮球",
+    "收到货后发现后盖松动且有划痕，希望能在七天无理由的期限内进行退换，客服称其不知道七天无理由退货的政策"
+  ],
+  '社交': [
+    "不要给我推荐可能认识的人了，这个功能太冒犯了，隐私被侵犯",
+    "熟人推荐机制成了用户隐私和个人空间被侵犯的源头，很不爽",
+    "关闭推荐功能设置得过于隐蔽，甚至存在误导用户的情况，形同虚设",
+    "广告不准，这还是推荐没做好啊，朋友圈广告从未让我满意",
+    "智能客服常常出现沟通不畅、答非所问的情况，转接人工客服更是难如登天",
+    "无法解决个性化问题、回答生硬机械、不能准确理解提问，体验很差",
+    "系统根据用户画像生成的虚拟评论，广告评论区的好友互动真假难辨",
+    "辨别真伪的关键在于观察互动细节，真实评论通常带有个人化表达和错别字",
+    "微信转账提示你的交易已被银行拒绝，这份瞬间的愕然与焦虑可想而知",
+    "朋友圈底下评论怎么艾特别人，被@的好友需同时满足两个条件，太麻烦了"
+  ],
+  '工具': [
+    "多人实时协作略卡顿，文件过大或网络不佳时，协作流畅性稍差",
+    "模板资源分类不够细，搜索模板时有时难以精确定位需要的样式",
+    "AI功能偏向中文场景，英文润色、外语内容生成能力仍有待提升",
+    "云端加载时间稍长，在低速网络或海外网络下偶有卡顿现象",
+    "增加跨语言支持，特别是中英混排场景下的格式保持，现在排版会乱",
+    "优化模板搜索和个性化推荐，现在找模板太费劲了，翻半天找不到",
+    "加强协作功能的可视化提示与冲突检测，多人编辑经常互相覆盖内容",
+    "提供更多行业定制模板，如医疗、法务、建筑等专业场景，现在太通用",
+    "虽然免广告的效果明显，但其他付费功能的吸引力却并不如预期，权衡后选择不再续费",
+    "在与同类型产品的比较中，会员制所提供的附加价值显得不足，性价比不高",
+    "逐渐向企业级服务商转型，影响了会员内容的持续更新速度，个人用户被忽视了",
+    "自动生成论文目录功能很香，节省大量排版时间，对学生党非常友好，希望多出一些学术功能"
+  ],
+  '内容': [
+    "评论只有和订单、SKU、售后状态关联起来，才有分析价值，现在数据太分散了",
+    "标签不统一，同样是尺码偏小，有人记为尺码问题，有人记为体验问题，统计口径混乱",
+    "只看表层词，不看业务上下文，例如慢可能是物流慢，也可能是客服响应慢",
+    "差评只能看到显性问题，很多复购流失、咨询转化差等问题往往藏在中评和追评里",
+    "屏幕清晰但电池太耗电，快递很快但包装简陋，粗粒度分类完全无法支撑产品迭代决策",
+    "完播率、点赞数、评论数这些数据指标能不能更直观地展示在创作者后台",
+    "不要开启仅展示精选评论，该设置会遗漏持不同意见的真实反馈，影响判断",
+    "定期查看待审核评论列表，对机器暂存的疑似违规但实际为真实反馈的内容及时通过",
+    "对于用户的正面评论，及时回复表示感谢和认可，提升用户粘性和活跃度",
+    "对于负面评论，保持冷静及时解决问题，避免冲突升级影响品牌形象",
+    "定期分析评论数据，了解用户需求和反馈，优化内容策略和推荐算法",
+    "推荐的内容完全不相关，感觉算法有问题，推送的都是我不感兴趣的东西"
+  ],
+  '金融': [
+    "转账无效，付款账号金额不够，信用卡不能转出，定期存折不能转出",
+    "转出账户被销户、冻结、挂失等异常状态，不能转出，提示也不清楚",
+    "转入账户收款账号、收款人姓名、开户行三者任意不匹配都会转账失败",
+    "U盾密码错误、验证码错误、超时、为空都会转账失败，容错性太差",
+    "手续费封顶、最低手续费、手续费折扣这些规则太复杂了看不懂，能不能简化",
+    "转账超时导致转账失败，但手续费照扣，这合理吗？钱扣了事没办成",
+    "汇款1万失败，银行照扣45元手续费，自助机上没有失败不退款的提示",
+    "银行有强制收费之嫌，汇款不成功很可能是银行系统自身原因造成的",
+    "信用卡溢缴款不给利息，提现仍收取现费，已成绝大部分银行惯例，很不合理",
+    "卡片过期或已挂失、预留信息不匹配、可用余额不足导致交易被拒绝",
+    "银行在进行系统升级、维护期间，相关服务可能暂时关闭或出现不稳定，提前通知一下很难吗",
+    "宣传低手续费，实则存在诸多隐藏条款，资金存取环节产生额外费用，综合费率并不低"
+  ]
+};
+
+/* ================= UI 交互 ================= */
+function switchTab(idx) {
+  currentTab = idx;
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active', i===idx));
+  [0,1,2].forEach(i=>document.getElementById('tab-'+i).classList.toggle('hidden', i!==idx));
+}
+
+function selectSingle(el) {
+  el.parentElement.querySelectorAll('.single-select').forEach(t=>t.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function toggleTag(el) {
+  el.classList.toggle('selected');
+}
+
+function toggleModule(id) {
+  const body = document.getElementById(id+'-body');
+  const btn = document.querySelector('#'+id+' .toggle-btn');
+  body.classList.toggle('collapsed');
+  btn.textContent = body.classList.contains('collapsed') ? '+' : '−';
+}
+
+function loadDemo() {
+  // 读取当前选中的产品类型
+  const selectedType = document.querySelector('#productType .single-select.selected');
+  const type = selectedType ? selectedType.dataset.val : '工具';
+  const data = demoData[type] || demoData['工具'];
+  
+  document.getElementById('manualInput').value = data.join('\n');
+  document.getElementById('batchInput').value = data.join('\n');
+  updateBatchCount();
+  // 切换到批量粘贴tab展示数据
+  switchTab(1);
+  // 提示用户已加载对应行业的数据
+  const msg = document.getElementById('loadingMsg');
+  if(msg) msg.textContent = `已加载「${type}」行业 ${data.length} 条Demo数据`;
+}
+
+document.getElementById('batchInput').addEventListener('input', updateBatchCount);
+function updateBatchCount() {
+  const lines = document.getElementById('batchInput').value.split('\n').filter(l=>l.trim());
+  document.getElementById('batchCount').textContent = lines.length;
+}
+
+function handleFile(input) {
+  const file = input.files[0];
+  if(!file) return;
+  document.getElementById('fileName').textContent = '已选择: ' + file.name;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const text = e.target.result;
+    document.getElementById('batchInput').value = text.split('\n').filter(l=>l.trim()).join('\n');
+    updateBatchCount();
+  };
+  reader.readAsText(file);
+}
+
+/* ================= 分析引擎 ================= */
+const negativeWords = ['不好用','难用','垃圾','卡顿','闪退','找不到','困惑','失望','退款','差评','慢','崩溃','广告','贵','坑','卡','闪','退','崩','烂','差','糟','烦','气','怒','投诉','卸载','弃','坑','骗','不值','涨价','耗电','发热','死机','bug','BUG','错误','失败','连不上','连不上','连不上','连不上','连不上'];
+const positiveWords = ['好用','喜欢','赞','方便','流畅','推荐','惊喜','终于','贴心','舒服','优秀','棒','完美','满意','爱','不错','好','快','清晰','简洁','美观','漂亮','好用','好用'];
+const neutralWords = ['建议','希望','能不能','是否','考虑','能否','可否','请问','如果','也许'];
+const urgentWords = ['退款','卸载','投诉','闪退','崩溃','死机','诈骗','骗','坑','垃圾'];
+
+const clusterKeywords = {
+  '功能需求': ['想要','希望','建议','能不能','加上','缺少','增加','支持','导出','同步','批量','自定义','添加','功能','需求','需要','能否','可否'],
+  '体验问题': ['难用','找不到','不直观','复杂','困惑','操作','界面','交互','流程','步骤','麻烦','繁琐','混乱','反人类','不习惯','不适应'],
+  '性能抱怨': ['卡','慢','闪退','崩溃','加载','耗电','发热','启动','响应','延迟','卡顿','掉帧','优化','性能','速度','流畅','内存','cpu','CPU'],
+  '价格敏感': ['贵','坑','不值','免费','付费','氪','会员','涨价','价格','费用','收费','划算','性价比','便宜','优惠','折扣','月卡','年卡','订阅'],
+  '竞品对比': ['不如','别的','都有','为什么','竞品','对手','对比','相比','别人家','其他','xx','XX','某','同类产品','同类型'],
+  '内容质量': ['内容少','没意思','重复','质量','推荐不准','算法','内容','推荐','推送','资讯','文章','视频','信息','相关','精准','准确']
+};
+
+const clusterColors = {
+  '功能需求': '#00d2ff',
+  '体验问题': '#ff6b35',
+  '性能抱怨': '#e74c3c',
+  '价格敏感': '#f1c40f',
+  '竞品对比': '#9b59b6',
+  '内容质量': '#2ecc71'
+};
+
+function getFeedbackList() {
+  let text = '';
+  if(currentTab===0) text = document.getElementById('manualInput').value;
+  else if(currentTab===1) text = document.getElementById('batchInput').value;
+  else text = document.getElementById('batchInput').value; // 文件已读入batch
+  return text.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
+}
+
+function analyzeSentiment(text) {
+  let neg=0, pos=0, neu=0, urgent=0;
+  negativeWords.forEach(w=>{ if(text.includes(w)) neg++; });
+  positiveWords.forEach(w=>{ if(text.includes(w)) pos++; });
+  neutralWords.forEach(w=>{ if(text.includes(w)) neu++; });
+  urgentWords.forEach(w=>{ if(text.includes(w)) urgent++; });
+  if(text.includes('！') || text.includes('!')) neg += 0.5;
+  if(text.includes('？') || text.includes('?')) neu += 0.3;
+  if(neg > pos && neg > neu) return { type:'负面', score: -neg, urgent };
+  if(pos > neg && pos > neu) return { type:'正面', score: pos, urgent };
+  return { type:'中性', score: neu, urgent };
+}
+
+function classifyCluster(text, dims) {
+  const scores = {};
+  dims.forEach(d=>{
+    if(!clusterKeywords[d]) return;
+    let s = 0;
+    clusterKeywords[d].forEach(k=>{ if(text.includes(k)) s++; });
+    scores[d] = s;
+  });
+  let best = null, max = 0;
+  for(const k in scores) { if(scores[k]>max){ max=scores[k]; best=k; } }
+  if(!best || max===0) return '其他';
+  return best;
+}
+
+function startAnalyze() {
+  const list = getFeedbackList();
+  if(list.length===0){ alert('请先输入用户反馈'); return; }
+  if(list.length>50){ alert('单次最多分析50条反馈'); return; }
+
+  const dims = Array.from(document.querySelectorAll('#dimensions .selected')).map(el=>el.dataset.val);
+  if(dims.length===0){ alert('请至少选择一个分析维度'); return; }
+
+  // UI loading
+  const btn = document.getElementById('analyzeBtn');
+  const loading = document.getElementById('loadingText');
+  const msg = document.getElementById('loadingMsg');
+  btn.disabled = true; btn.style.opacity = 0.6;
+  loading.style.display = 'flex';
+
+  // 模拟分析过程
+  let step = 0;
+  const steps = ['正在解析反馈文本...', '正在进行情感分析...', '正在聚类痛点...', '正在计算优先级...', '正在生成产品建议...'];
+  const interval = setInterval(()=>{
+    step++;
+    msg.textContent = steps[Math.min(step, steps.length-1)] + ` (${list.length}条)`;
+    if(step>=5) {
+      clearInterval(interval);
+      runAnalysis(list, dims);
+      btn.disabled = false; btn.style.opacity = 1;
+      loading.style.display = 'none';
+    }
+  }, 400);
+}
+
+function runAnalysis(list, dims) {
+  // 情感分析
+  const sentiments = list.map((t,i)=>{
+    const s = analyzeSentiment(t);
+    return { text:t, idx:i, ...s };
+  });
+  const negCount = sentiments.filter(s=>s.type==='负面').length;
+  const posCount = sentiments.filter(s=>s.type==='正面').length;
+  const neuCount = sentiments.filter(s=>s.type==='中性').length;
+  const urgentCount = sentiments.filter(s=>s.urgent>0).length;
+
+  // 聚类
+  const clusters = {};
+  sentiments.forEach(s=>{
+    const c = classifyCluster(s.text, dims);
+    if(!clusters[c]) clusters[c] = { items:[], neg:0, pos:0, neu:0, urgent:0, keywords:{} };
+    clusters[c].items.push(s);
+    clusters[c][s.type==='负面'?'neg':s.type==='正面'?'pos':'neu']++;
+    clusters[c].urgent += s.urgent;
+    // 提取关键词
+    const words = s.text.replace(/[，。！？、；：""''（）【】《》]/g,' ').split(/\s+/).filter(w=>w.length>=2);
+    words.forEach(w=>{
+      if(negativeWords.includes(w)||positiveWords.includes(w)||neutralWords.includes(w)) return;
+      clusters[c].keywords[w] = (clusters[c].keywords[w]||0)+1;
+    });
+  });
+
+  // 为每个聚类提取top关键词
+  for(const c in clusters) {
+    const kw = clusters[c].keywords;
+    clusters[c].topKeywords = Object.entries(kw).sort((a,b)=>b[1]-a[1]).slice(0,3).map(a=>a[0]);
+    if(clusters[c].topKeywords.length===0) clusters[c].topKeywords = [c];
+  }
+
+  // 优先级计算
+  const matrix = [];
+  for(const c in clusters) {
+    const cl = clusters[c];
+    const impact = (cl.items.length / list.length) * 5; // 0-5
+    const severity = (cl.neg / Math.max(cl.items.length,1)) * (1 + cl.urgent*0.5); // 综合严重度
+    matrix.push({
+      name: c,
+      count: cl.items.length,
+      impact,
+      severity: Math.min(severity, 5),
+      negRatio: cl.neg / Math.max(cl.items.length,1),
+      urgent: cl.urgent,
+      keywords: cl.topKeywords,
+      sample: cl.items.slice(0,3).map(s=>s.text)
+    });
+  }
+  matrix.sort((a,b)=> (b.impact*b.severity) - (a.impact*a.severity) );
+
+  // 生成建议
+  const suggestions = generateSuggestions(matrix, list.length);
+
+  analysisResult = { sentiments, clusters, matrix, suggestions, total:list.length, negCount, posCount, neuCount, urgentCount };
+
+  // 显示结果
+  document.getElementById('emptyState').classList.add('hidden');
+  document.getElementById('results').classList.remove('hidden');
+
+  // 依次展开模块
+  showModule('modA', 0);
+  renderModuleA();
+  setTimeout(()=>{ showModule('modB', 0); renderModuleB(); }, 800);
+  setTimeout(()=>{ showModule('modC', 0); renderModuleC(); }, 1600);
+  setTimeout(()=>{ showModule('modD', 0); renderModuleD(); }, 2400);
+}
+
+function showModule(id, delay) {
+  const el = document.getElementById(id);
+  el.classList.remove('visible');
+  setTimeout(()=>el.classList.add('visible'), delay);
+}
+
+/* ================= 渲染模块A：情感分布 ================= */
+function renderModuleA() {
+  const r = analysisResult;
+  document.getElementById('statTotal').textContent = r.total;
+  document.getElementById('statNeg').textContent = Math.round(r.negCount/r.total*100) + '%';
+  document.getElementById('statUrgent').textContent = r.urgentCount;
+
+  // 饼图
+  const canvas = document.getElementById('pieCanvas');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = 220 * dpr; canvas.height = 220 * dpr;
+  ctx.scale(dpr, dpr);
+  const cx=110, cy=110, r0=90;
+  const data = [
+    { label:'正面', value:r.posCount, color:'#2ecc71' },
+    { label:'中性', value:r.neuCount, color:'#f1c40f' },
+    { label:'负面', value:r.negCount, color:'#e74c3c' }
+  ];
+  const total = r.total || 1;
+  let start = -Math.PI/2;
+  data.forEach(d=>{
+    const angle = (d.value/total)*Math.PI*2;
+    // 动画展开
+    animateArc(ctx, cx, cy, r0, start, start+angle, d.color, 600);
+    start += angle;
+  });
+  // 中心文字
+  setTimeout(()=>{
+    ctx.fillStyle='#fff'; ctx.font='bold 18px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(r.total, cx, cy-6);
+    ctx.font='11px sans-serif'; ctx.fillStyle='var(--text-dim)';
+    ctx.fillText('条反馈', cx, cy+10);
+  }, 600);
+  // 图例
+  setTimeout(()=>{
+    let lx=10, ly=200;
+    data.forEach(d=>{
+      ctx.fillStyle=d.color; ctx.fillRect(lx, ly, 10, 10); lx+=14;
+      ctx.fillStyle='var(--text)'; ctx.font='11px sans-serif'; ctx.textAlign='left'; ctx.textBaseline='top';
+      ctx.fillText(d.label+' '+Math.round(d.value/total*100)+'%', lx, ly-1);
+      lx += 50;
+    });
+  }, 600);
+
+  // 趋势图（按顺序画情感走势）
+  const tCanvas = document.getElementById('trendCanvas');
+  const tctx = tCanvas.getContext('2d');
+  tCanvas.width = 400 * dpr; tCanvas.height = 220 * dpr;
+  tctx.scale(dpr, dpr);
+  const scores = r.sentiments.map(s=> s.type==='正面'?1 : s.type==='负面'?-1 : 0);
+  const w=400, h=220, pad=30;
+  // 网格
+  tctx.strokeStyle='var(--border)'; tctx.lineWidth=1;
+  for(let i=0;i<=4;i++){ tctx.beginPath(); tctx.moveTo(pad, pad+i*(h-2*pad)/4); tctx.lineTo(w-pad, pad+i*(h-2*pad)/4); tctx.stroke(); }
+  // 轴线
+  tctx.strokeStyle='var(--text-dim)'; tctx.beginPath(); tctx.moveTo(pad, h/2); tctx.lineTo(w-pad, h/2); tctx.stroke();
+  // 折线
+  if(scores.length>1){
+    tctx.strokeStyle='var(--accent)'; tctx.lineWidth=2; tctx.beginPath();
+    const stepX = (w-2*pad)/(scores.length-1);
+    const stepY = (h-2*pad)/2;
+    scores.forEach((sc,i)=>{
+      const x = pad + i*stepX;
+      const y = h/2 - sc*stepY;
+      if(i===0) tctx.moveTo(x,y); else tctx.lineTo(x,y);
+    });
+    tctx.stroke();
+    // 点
+    scores.forEach((sc,i)=>{
+      const x = pad + i*stepX; const y = h/2 - sc*stepY;
+      tctx.fillStyle = sc>0?'#2ecc71':sc<0?'#e74c3c':'#f1c40f';
+      tctx.beginPath(); tctx.arc(x,y,4,0,Math.PI*2); tctx.fill();
+    });
+  }
+  tctx.fillStyle='var(--text-dim)'; tctx.font='10px sans-serif'; tctx.textAlign='center';
+  tctx.fillText('反馈顺序 →', w/2, h-8);
+}
+
+function animateArc(ctx, cx, cy, r, start, end, color, duration) {
+  const startTime = performance.now();
+  function draw(now) {
+    const t = Math.min((now - startTime)/duration, 1);
+    const cur = start + (end-start)*t;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,start,cur); ctx.closePath();
+    ctx.fillStyle=color; ctx.fill();
+    if(t<1) requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+}
+
+/* ================= 渲染模块B：痛点聚类气泡图 ================= */
+function renderModuleB() {
+  const canvas = document.getElementById('bubbleCanvas');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * dpr; canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  const W = rect.width, H = rect.height;
+
+  const bubbles = [];
+  const clusters = analysisResult.matrix;
+  const maxCount = Math.max(...clusters.map(c=>c.count), 1);
+  clusters.forEach((c,i)=>{
+    const radius = 30 + (c.count/maxCount)*50;
+    const x = 60 + (i % 3) * (W-120)/2 + (Math.random()-0.5)*30;
+    const y = 60 + Math.floor(i/3) * (H-120)/1.5 + (Math.random()-0.5)*30;
+    const color = clusterColors[c.name] || '#00d2ff';
+    const alpha = 0.3 + (c.negRatio)*0.5;
+    bubbles.push({ x, y, r:radius, color, alpha, data:c, phase:Math.random()*Math.PI*2 });
+  });
+
+  // 浮动动画
+  let time = 0;
+  function loop() {
+    ctx.clearRect(0,0,W,H);
+    bubbles.forEach(b=>{
+      const floatY = Math.sin(time*0.002 + b.phase) * 6;
+      const x = b.x, y = b.y + floatY;
+      // 气泡
+      ctx.beginPath(); ctx.arc(x,y,b.r,0,Math.PI*2);
+      ctx.fillStyle = b.color + Math.floor(b.alpha*255).toString(16).padStart(2,'0');
+      ctx.fill();
+      ctx.strokeStyle = b.color; ctx.lineWidth = 2; ctx.stroke();
+      // 文字
+      ctx.fillStyle = '#fff'; ctx.font='bold 13px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(b.data.name, x, y-6);
+      ctx.font='11px sans-serif'; ctx.fillStyle='rgba(255,255,255,0.8)';
+      ctx.fillText(b.data.count+'条', x, y+10);
+      // 关键词
+      ctx.font='10px sans-serif'; ctx.fillStyle='rgba(255,255,255,0.6)';
+      ctx.fillText(b.data.keywords.slice(0,2).join('·'), x, y+b.r-12);
+    });
+    time += 16;
+    if(document.getElementById('modB').classList.contains('visible'))
+      requestAnimationFrame(loop);
+  }
+  loop();
+
+  // Hover tooltip
+  canvas.onmousemove = e => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (canvas.width/rect.width/dpr);
+    const my = (e.clientY - rect.top) * (canvas.height/rect.height/dpr);
+    let hit = null;
+    bubbles.forEach(b=>{
+      const dy = Math.sin(time*0.002 + b.phase) * 6;
+      const dx = mx - b.x, dy2 = my - (b.y+dy);
+      if(dx*dx + dy2*dy2 < b.r*b.r) hit = b.data;
+    });
+    canvas.title = hit ? `${hit.name} (${hit.count}条)\n严重度: ${hit.severity.toFixed(1)} | 影响: ${hit.impact.toFixed(1)}\n示例: ${hit.sample[0]||''}` : '';
+  };
+}
+
+/* ================= 渲染模块C：优先级矩阵 ================= */
+function renderModuleC() {
+  const canvas = document.getElementById('matrixCanvas');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * dpr; canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  const W = rect.width, H = rect.height;
+  const pad = 40;
+
+  // 背景四象限
+  const qw = (W-2*pad)/2, qh = (H-2*pad)/2;
+  ctx.fillStyle = 'rgba(255,107,53,0.08)'; ctx.fillRect(pad, pad, qw, qh); // 左上: 紧急修复
+  ctx.fillStyle = 'rgba(0,210,255,0.08)'; ctx.fillRect(pad+qw, pad, qw, qh); // 右上: 体验优化
+  ctx.fillStyle = 'rgba(241,196,15,0.08)'; ctx.fillRect(pad, pad+qh, qw, qh); // 左下: 长期规划
+  ctx.fillStyle = 'rgba(139,155,180,0.05)'; ctx.fillRect(pad+qw, pad+qh, qw, qh); // 右下: 暂缓
+
+  // 轴线
+  ctx.strokeStyle = 'var(--text-dim)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pad, H/2); ctx.lineTo(W-pad, H/2); ctx.stroke(); // X
+  ctx.beginPath(); ctx.moveTo(W/2, pad); ctx.lineTo(W/2, H-pad); ctx.stroke(); // Y
+
+  // 标签
+  ctx.fillStyle = 'var(--text-dim)'; ctx.font='11px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('低影响用户数', pad+qw/2, H-pad+18);
+  ctx.fillText('高影响用户数', pad+qw+qw/2, H-pad+18);
+  ctx.save(); ctx.translate(14, pad+qh/2); ctx.rotate(-Math.PI/2); ctx.fillText('低严重度',0,0); ctx.restore();
+  ctx.save(); ctx.translate(14, pad+qh+qh/2); ctx.rotate(-Math.PI/2); ctx.fillText('高严重度',0,0); ctx.restore();
+
+  // 象限标题
+  ctx.font='bold 12px sans-serif'; ctx.textAlign='center';
+  ctx.fillStyle = 'var(--warn)'; ctx.fillText('🔥 紧急修复', pad+qw/2, pad+16);
+  ctx.fillStyle = 'var(--accent)'; ctx.fillText('✨ 体验优化', pad+qw+qw/2, pad+16);
+  ctx.fillStyle = '#f1c40f'; ctx.fillText('📋 长期规划', pad+qw/2, pad+qh+16);
+  ctx.fillStyle = 'var(--text-dim)'; ctx.fillText('💤 暂缓处理', pad+qw+qw/2, pad+qh+16);
+
+  // 画点（从中心弹出动画）
+  const items = analysisResult.matrix;
+  const maxImpact = Math.max(...items.map(i=>i.impact), 1);
+  const maxSeverity = Math.max(...items.map(i=>i.severity), 1);
+
+  let startTime = performance.now();
+  function drawPoints() {
+    const t = Math.min((performance.now()-startTime)/800, 1);
+    const ease = 1 - Math.pow(1-t, 3);
+    ctx.clearRect(0,0,W,H);
+    // 重画背景
+    ctx.fillStyle = 'rgba(255,107,53,0.08)'; ctx.fillRect(pad, pad, qw, qh);
+    ctx.fillStyle = 'rgba(0,210,255,0.08)'; ctx.fillRect(pad+qw, pad, qw, qh);
+    ctx.fillStyle = 'rgba(241,196,15,0.08)'; ctx.fillRect(pad, pad+qh, qw, qh);
+    ctx.fillStyle = 'rgba(139,155,180,0.05)'; ctx.fillRect(pad+qw, pad+qh, qw, qh);
+    ctx.strokeStyle = 'var(--text-dim)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad, H/2); ctx.lineTo(W-pad, H/2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(W/2, pad); ctx.lineTo(W/2, H-pad); ctx.stroke();
+    ctx.fillStyle = 'var(--text-dim)'; ctx.font='11px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('低影响用户数', pad+qw/2, H-pad+18);
+    ctx.fillText('高影响用户数', pad+qw+qw/2, H-pad+18);
+    ctx.save(); ctx.translate(14, pad+qh/2); ctx.rotate(-Math.PI/2); ctx.fillText('低严重度',0,0); ctx.restore();
+    ctx.save(); ctx.translate(14, pad+qh+qh/2); ctx.rotate(-Math.PI/2); ctx.fillText('高严重度',0,0); ctx.restore();
+    ctx.font='bold 12px sans-serif'; ctx.textAlign='center';
+    ctx.fillStyle = 'var(--warn)'; ctx.fillText('🔥 紧急修复', pad+qw/2, pad+16);
+    ctx.fillStyle = 'var(--accent)'; ctx.fillText('✨ 体验优化', pad+qw+qw/2, pad+16);
+    ctx.fillStyle = '#f1c40f'; ctx.fillText('📋 长期规划', pad+qw/2, pad+qh+16);
+    ctx.fillStyle = 'var(--text-dim)'; ctx.fillText('💤 暂缓处理', pad+qw+qw/2, pad+qh+16);
+
+    items.forEach(it=>{
+      const targetX = pad + (it.impact/maxImpact)*(W-2*pad);
+      const targetY = H - pad - (it.severity/maxSeverity)*(H-2*pad);
+      const cx = W/2 + (targetX - W/2)*ease;
+      const cy = H/2 + (targetY - H/2)*ease;
+      const size = 8 + it.count*1.5;
+      ctx.beginPath(); ctx.arc(cx, cy, size, 0, Math.PI*2);
+      ctx.fillStyle = (clusterColors[it.name]||'#00d2ff') + 'cc';
+      ctx.fill(); ctx.strokeStyle='#fff'; ctx.lineWidth=1; ctx.stroke();
+      ctx.fillStyle='#fff'; ctx.font='11px sans-serif'; ctx.textAlign='center';
+      ctx.fillText(it.name, cx, cy-size-6);
+    });
+
+    if(t<1) requestAnimationFrame(drawPoints);
+  }
+  drawPoints();
+
+  // 象限图例
+  const quadrants = [
+    { cls:'q-urgent', title:'🔥 紧急修复', items: items.filter(i=>i.impact>=2.5 && i.severity>=2.5) },
+    { cls:'q-opt', title:'✨ 体验优化', items: items.filter(i=>i.impact>=2.5 && i.severity<2.5) },
+    { cls:'q-long', title:'📋 长期规划', items: items.filter(i=>i.impact<2.5 && i.severity>=2.5) },
+    { cls:'q-low', title:'💤 暂缓处理', items: items.filter(i=>i.impact<2.5 && i.severity<2.5) }
+  ];
+  document.getElementById('quadrantLegend').innerHTML = quadrants.map(q=>`
+    <div class="quadrant-item ${q.cls}">
+      <div class="q-title">${q.title}</div>
+      <div style="color:var(--text-dim);">${q.items.length? q.items.map(i=>i.name+'('+i.count+'条)').join('、') : '暂无'}</div>
+    </div>
+  `).join('');
+}
+
+/* ================= 渲染模块D：AI产品建议 ================= */
+function renderModuleD() {
+  const container = document.getElementById('suggestionList');
+  container.innerHTML = '';
+  analysisResult.suggestions.forEach((sug, idx)=>{
+    const div = document.createElement('div');
+    div.className = 'suggestion-item';
+    div.innerHTML = `
+      <div class="sug-header">
+        <div class="sug-title">${sug.title}</div>
+        <div class="sug-badges">
+          <span class="badge badge-${sug.impactLevel}">影响 ${sug.impactLabel}</span>
+          <span class="badge badge-${sug.diffLevel}">难度 ${sug.diffLabel}</span>
+        </div>
+      </div>
+      <div class="sug-pain">关联痛点：${sug.pain}</div>
+      <div class="sug-action" id="sug-action-${idx}"></div>
+    `;
+    container.appendChild(div);
+    // 打字机效果
+    typeWriter(document.getElementById('sug-action-'+idx), sug.action, 20, idx*300);
+  });
+}
+
+function typeWriter(el, text, speed, delay) {
+  el.classList.add('typewriter');
+  setTimeout(()=>{
+    let i = 0;
+    const timer = setInterval(()=>{
+      el.textContent = text.slice(0, i+1);
+      i++;
+      if(i>=text.length) { clearInterval(timer); el.classList.remove('typewriter'); }
+    }, speed);
+  }, delay);
+}
+
+function generateSuggestions(matrix, total) {
+  const templates = {
+    '功能需求': (m,t) => ({
+      title: `优先评估「${m.keywords[0]||'核心功能'}」MVP方案`,
+      pain: `${m.name}（${m.count}条反馈）`,
+      action: `基于${m.count}条用户反馈，建议优先评估${m.keywords[0]||'该功能'}的MVP方案，预计可覆盖${Math.round(m.count/t*100)}%用户需求。`,
+      impactLevel: m.impact>=3?'high':m.impact>=1.5?'mid':'low',
+      impactLabel: m.impact>=3?'高':m.impact>=1.5?'中':'低',
+      diffLevel: 'mid', diffLabel: '中'
+    }),
+    '体验问题': (m,t) => ({
+      title: `启动「${m.keywords[0]||'体验'}」走查与优化Sprint`,
+      pain: `${m.name}（${m.count}条反馈，负面占比${Math.round(m.negRatio*100)}%）`,
+      action: `${Math.round(m.count/t*100)}%用户反馈${m.keywords[0]||'体验'}问题，建议启动体验走查并制定2周优化Sprint，重点解决${m.sample[0]||'核心痛点'}。`,
+      impactLevel: m.impact>=3?'high':m.impact>=1.5?'mid':'low',
+      impactLabel: m.impact>=3?'高':m.impact>=1.5?'中':'低',
+      diffLevel: 'low', diffLabel: '低'
+    }),
+    '性能抱怨': (m,t) => ({
+      title: `设定性能基线并纳入下一版本OKR`,
+      pain: `${m.name}（${m.count}条反馈，含${m.urgent}条紧急）`,
+      action: `性能问题影响${Math.round(m.count/t*100)}%用户，建议设定启动时间≤2s、崩溃率≤0.1%基线，并纳入下一版本OKR。`,
+      impactLevel: m.impact>=3?'high':m.impact>=1.5?'mid':'low',
+      impactLabel: m.impact>=3?'高':m.impact>=1.5?'中':'低',
+      diffLevel: 'high', diffLabel: '高'
+    }),
+    '价格敏感': (m,t) => ({
+      title: `优化定价策略与付费转化漏斗`,
+      pain: `${m.name}（${m.count}条反馈）`,
+      action: `${m.count}条价格相关反馈显示用户对${m.keywords[0]||'定价'}敏感，建议A/B测试月卡/季卡组合，优化付费转化漏斗。`,
+      impactLevel: m.impact>=3?'high':m.impact>=1.5?'mid':'low',
+      impactLabel: m.impact>=3?'高':m.impact>=1.5?'中':'低',
+      diffLevel: 'mid', diffLabel: '中'
+    }),
+    '竞品对比': (m,t) => ({
+      title: `竞品功能差距分析与追赶计划`,
+      pain: `${m.name}（${m.count}条反馈）`,
+      action: `用户多次提及竞品优势，建议开展竞品功能差距分析，制定Q3追赶计划，优先补齐${m.keywords[0]||'核心功能'}。`,
+      impactLevel: m.impact>=3?'high':m.impact>=1.5?'mid':'low',
+      impactLabel: m.impact>=3?'高':m.impact>=1.5?'中':'低',
+      diffLevel: 'high', diffLabel: '高'
+    }),
+    '内容质量': (m,t) => ({
+      title: `算法推荐精准度优化专项`,
+      pain: `${m.name}（${m.count}条反馈）`,
+      action: `内容推荐不准影响${Math.round(m.count/t*100)}%用户留存，建议启动推荐算法优化专项，引入用户兴趣标签体系。`,
+      impactLevel: m.impact>=3?'high':m.impact>=1.5?'mid':'low',
+      impactLabel: m.impact>=3?'高':m.impact>=1.5?'中':'低',
+      diffLevel: 'high', diffLabel: '高'
+    }),
+    '其他': (m,t) => ({
+      title: `综合优化：${m.keywords[0]||'用户反馈'}`,
+      pain: `${m.name}（${m.count}条反馈）`,
+      action: `针对${m.count}条综合反馈，建议建立专项跟进机制，定期回访用户验证改进效果。`,
+      impactLevel: 'low', impactLabel: '低',
+      diffLevel: 'low', diffLabel: '低'
+    })
+  };
+
+  const out = [];
+  matrix.slice(0,5).forEach(m=>{
+    const fn = templates[m.name] || templates['其他'];
+    out.push(fn(m, total));
+  });
+  return out;
+}
+
+/* ================= 底部功能 ================= */
+function exportReport() {
+  if(!analysisResult){ alert('请先完成分析'); return; }
+  const r = analysisResult;
+  const lines = [
+    '═══ InsightAI 洞察报告 ═══',
+    `生成时间: ${new Date().toLocaleString()}`,
+    `产品类型: ${document.querySelector('#productType .selected').dataset.val}`,
+    '',
+    '【一、情感分布】',
+    `总反馈数: ${r.total}`,
+    `正面: ${r.posCount} (${Math.round(r.posCount/r.total*100)}%)`,
+    `中性: ${r.neuCount} (${Math.round(r.neuCount/r.total*100)}%)`,
+    `负面: ${r.negCount} (${Math.round(r.negCount/r.total*100)}%)`,
+    `紧急问题: ${r.urgentCount}`,
+    '',
+    '【二、痛点聚类】',
+    ...r.matrix.map(m=>`· ${m.name}: ${m.count}条 | 影响${m.impact.toFixed(1)} | 严重${m.severity.toFixed(1)} | 关键词: ${m.keywords.join(', ')}`),
+    '',
+    '【三、优先级矩阵】',
+    '🔥 紧急修复: ' + r.matrix.filter(i=>i.impact>=2.5&&i.severity>=2.5).map(i=>i.name).join('、'),
+    '✨ 体验优化: ' + r.matrix.filter(i=>i.impact>=2.5&&i.severity<2.5).map(i=>i.name).join('、'),
+    '📋 长期规划: ' + r.matrix.filter(i=>i.impact<2.5&&i.severity>=2.5).map(i=>i.name).join('、'),
+    '💤 暂缓处理: ' + r.matrix.filter(i=>i.impact<2.5&&i.severity<2.5).map(i=>i.name).join('、'),
+    '',
+    '【四、AI产品建议】',
+    ...r.suggestions.map((s,i)=>`${i+1}. ${s.title}\n   关联: ${s.pain}\n   行动: ${s.action}`),
+    '',
+    '═══ Powered by InsightAI ═══'
+  ];
+  const blob = new Blob([lines.join('\n')], {type:'text/plain;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `InsightAI_洞察报告_${new Date().toISOString().slice(0,10)}.txt`;
+  a.click();
+}
+
+function shareLink() {
+  alert('链接已复制到剪贴板（模拟）\n实际生产环境可生成带参数的可分享URL');
+}
+
+function generatePRD() {
+  if(!analysisResult){ alert('请先完成分析'); return; }
+  const r = analysisResult;
+  const prd = [
+    '# 产品需求文档（PRD）大纲',
+    '',
+    '## 1. 背景与目标',
+    `- 基于InsightAI分析${r.total}条用户反馈，识别出${r.matrix.length}大核心痛点`,
+    `- 负面反馈占比${Math.round(r.negCount/r.total*100)}%，需优先解决紧急修复类问题`,
+    '',
+    '## 2. 需求概述',
+    ...r.suggestions.map((s,i)=>`${i+1}. ${s.title}\n   - 关联痛点: ${s.pain}\n   - 预期影响: ${s.impactLabel}\n   - 实现难度: ${s.diffLabel}`),
+    '',
+    '## 3. 功能需求',
+    ...r.matrix.map(m=>`- [${m.name}] ${m.keywords.join('/')}相关优化（${m.count}条反馈）`),
+    '',
+    '## 4. 非功能需求',
+    '- 性能：启动时间≤2s，崩溃率≤0.1%',
+    '- 体验：完成走查后NPS提升≥10分',
+    '',
+    '## 5. 里程碑',
+    '- Week 1-2: 体验走查 + 紧急修复',
+    '- Week 3-4: MVP功能评估与开发',
+    '- Week 5-6: 性能基线达成 + 灰度测试',
+    '',
+    '## 6. 成功指标',
+    `- 负面反馈率下降至${Math.max(5, Math.round(r.negCount/r.total*100/2))}%`,
+    '- 用户满意度评分提升15%',
+    '- 核心功能使用率提升20%'
+  ];
+  document.getElementById('prdOutput').textContent = prd.join('\n');
+}
+</script>
+</body>
+</html>
